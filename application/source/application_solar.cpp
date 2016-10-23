@@ -26,26 +26,86 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
   initializeGeometry();
   initializeShaderPrograms();
 }
+//glm::fmat4 modelTransformationStack; //For later
+
+void ApplicationSolar::upload_planet_transforms(orb &p) const{
+    glUseProgram(m_shaders.at("planet").handle);
+    
+    //rotation period based on time set below
+    glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime() * p.rotation), glm::fvec3{0.0f, 1.0f, 0.0f});
+    
+    //applying necessary scaling and translation
+    model_matrix = glm::scale(model_matrix, glm::vec3(p.scaling));
+    
+    //below the distance difference is changed to declared value from orb struct
+    model_matrix = glm::translate(model_matrix, glm::fvec3{p.distance_to_origin, 0.0f, -1.0f});
+    
+    //Originally from the render activity
+    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
+                       1, GL_FALSE, glm::value_ptr(model_matrix));
+    
+    // extra matrix for normal transformation to keep them orthogonal to surface
+    glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
+    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
+                       1, GL_FALSE, glm::value_ptr(normal_matrix));
+    
+    // bind the VAO to draw
+    glBindVertexArray(planet_object.vertex_AO);
+    
+    // draw bound vertex array using bound shader
+    glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
+    
+    //Changing the movement around a planet and the sun if the model is a moon
+    if(p.lunar)
+    {
+        // bind new shader
+        glUseProgram(m_shaders.at("planet").handle);
+        
+        model_matrix = glm::rotate(model_matrix, float(glfwGetTime() * 10.0f), glm::fvec3{0.0f, 1.0f, 0.1f});
+        
+        model_matrix = glm::translate(model_matrix, glm::fvec3{1.5f, 0.0f, -1.0f});
+        
+        model_matrix = glm::scale(model_matrix, glm::vec3(0.35f));
+        
+        //Originally from the render activity
+        
+        glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
+                           1, GL_FALSE, glm::value_ptr(model_matrix));
+        
+        // extra matrix for normal transformation to keep them orthogonal to surface
+        glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
+        glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
+                           1, GL_FALSE, glm::value_ptr(normal_matrix));
+        
+        // bind the VAO to draw
+        glBindVertexArray(planet_object.vertex_AO);
+        
+        // draw bound vertex array using bound shader
+        glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
+    }
+}
 
 void ApplicationSolar::render() const {
-  // bind shader to upload uniforms
-  glUseProgram(m_shaders.at("planet").handle);
-
-  glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime()), glm::fvec3{0.0f, 1.0f, 0.0f});
-  model_matrix = glm::translate(model_matrix, glm::fvec3{0.0f, 0.0f, -1.0f});
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
-                     1, GL_FALSE, glm::value_ptr(model_matrix));
-
-  // extra matrix for normal transformation to keep them orthogonal to surface
-  glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
-                     1, GL_FALSE, glm::value_ptr(normal_matrix));
-
-  // bind the VAO to draw
-  glBindVertexArray(planet_object.vertex_AO);
-
-  // draw bound vertex array using bound shader
-  glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
+    // bind shader to upload uniforms
+    std::vector<orb> orbContainer;
+    
+    //based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
+    orb sun {0.7f, 0.0f,    0.0f, };
+    orb mercury {0.05f, 365/88.0f, 15.0f, };
+    orb venus {0.2f, 365/225.0f, 18.0f, };
+    orb earth {0.15f, 1.0f, 21.0f, true};
+    orb mars {0.1f, 365/687.0f, 26.0f, };
+    orb jupiter {0.35f, 365/4332.0f, 31.0f, };
+    orb saturn {0.2f, 365/10759.0f, 36.0f, };
+    orb uranus {0.2f, 365/30688.0f, 40.0f, };
+    orb neptune {0.2f, 365/60182.0f, 45.0f, };
+    
+    orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
+    
+    
+    for(auto & orb : orbContainer){
+        upload_planet_transforms(orb);
+    }
 }
 
 void ApplicationSolar::updateView() {

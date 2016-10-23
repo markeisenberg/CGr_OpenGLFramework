@@ -8,6 +8,22 @@
 // gpu representation of model
 class ApplicationSolar : public Application {
  public:
+  struct orb{
+    
+    //Declaring the properties
+      bool lunar;
+    float scaling;
+    float rotation;
+    float distance_to_origin;
+
+    //assigning nexessary value types
+    orb (float s, float r, float d, bool m = false):
+    scaling{s},
+    rotation{r},
+    distance_to_origin{d},
+    lunar{m} {};
+      
+  };
   // allocate and initialize objects
   ApplicationSolar(std::string const& resource_path);
   // free allocated objects
@@ -29,6 +45,8 @@ class ApplicationSolar : public Application {
   void initializeShaderPrograms();
   void initializeGeometry();
   void updateView();
+
+  void upload_planet_transforms(orb  &p) const;
 
   // cpu representation of model
   model_object planet_object;
