@@ -12,12 +12,13 @@ class ApplicationSolar : public Application {
     
     //Declaring the properties
       bool lunar;
+      bool stars;
     float scaling;
     float rotation;
     float distance_to_origin;
 
     //assigning nexessary value types
-    orb (float s, float r, float d, bool m = false):
+    orb (float s, float r, float d, bool m = false, bool n = false):
     scaling{s},
     rotation{r},
     distance_to_origin{d},
@@ -49,7 +50,7 @@ class ApplicationSolar : public Application {
   void upload_planet_transforms(orb  &p) const;
 
   // cpu representation of model
-  model_object planet_object;
+  model_object planet_object, star_object;
 };
 
 #endif

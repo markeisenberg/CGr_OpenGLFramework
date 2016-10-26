@@ -19,6 +19,21 @@ using namespace gl;
 
 #include <iostream>
 
+//Start planet
+
+//based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
+ApplicationSolar::orb sun {0.7f, 0.0f,    0.0f, };
+ApplicationSolar::orb mercury {0.05f, 365/88.0f, 15.0f, };
+ApplicationSolar::orb venus {0.2f, 365/225.0f, 18.0f, };
+ApplicationSolar::orb earth {0.15f, 1.0f, 21.0f, true};
+ApplicationSolar::orb mars {0.1f, 365/687.0f, 26.0f, };
+ApplicationSolar::orb jupiter {0.35f, 365/4332.0f, 31.0f, };
+ApplicationSolar::orb saturn {0.2f, 365/10759.0f, 36.0f, };
+ApplicationSolar::orb uranus {0.2f, 365/30688.0f, 40.0f, };
+ApplicationSolar::orb neptune {0.2f, 365/60182.0f, 45.0f, };
+
+std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
+
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
  ,planet_object{}
@@ -86,22 +101,12 @@ void ApplicationSolar::upload_planet_transforms(orb &p) const{
 }
 
 void ApplicationSolar::render() const {
+    
     // bind shader to upload uniforms
-    std::vector<orb> orbContainer;
+    glUseProgram(m_shaders.at("planet").handle);
     
-    //based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
-    orb sun {0.7f, 0.0f,    0.0f, };
-    orb mercury {0.05f, 365/88.0f, 15.0f, };
-    orb venus {0.2f, 365/225.0f, 18.0f, };
-    orb earth {0.15f, 1.0f, 21.0f, true};
-    orb mars {0.1f, 365/687.0f, 26.0f, };
-    orb jupiter {0.35f, 365/4332.0f, 31.0f, };
-    orb saturn {0.2f, 365/10759.0f, 36.0f, };
-    orb uranus {0.2f, 365/30688.0f, 40.0f, };
-    orb neptune {0.2f, 365/60182.0f, 45.0f, };
-    
-    orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
-    
+    // bind the VAO to draw
+    glBindVertexArray(planet_object.vertex_AO);
     
     for(auto & orb : orbContainer){
         upload_planet_transforms(orb);
@@ -198,6 +203,7 @@ void ApplicationSolar::initializeGeometry() {
   planet_object.draw_mode = GL_TRIANGLES;
   // transfer number of indices to model object 
   planet_object.num_elements = GLsizei(planet_model.indices.size());
+    
 }
 
 ApplicationSolar::~ApplicationSolar() {
