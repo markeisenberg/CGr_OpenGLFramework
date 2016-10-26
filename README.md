@@ -1,4 +1,4 @@
-# Computer Graphics Assignments Summer Semester
+# Computer Graphics Assignments - Summer Semester 2016
 * Mark Eisenberg - 116453
 * Muzaffar Ali - 115589
 
