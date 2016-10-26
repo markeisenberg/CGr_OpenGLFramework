@@ -34,6 +34,8 @@ class ApplicationSolar : public Application {
   void uploadUniforms();
   // update projection matrix
   void updateProjection();
+    void starProjUp();
+    void uniformStarUp();
   // react to key input
   void keyCallback(int key, int scancode, int action, int mods);
   //handle delta mouse movement input
@@ -46,6 +48,7 @@ class ApplicationSolar : public Application {
   void initializeShaderPrograms();
   void initializeGeometry();
   void updateView();
+    void starUpdateView();
 
   void upload_planet_transforms(orb  &p) const;
 
