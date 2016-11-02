@@ -82,8 +82,8 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
         
     }
     
-    planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
     star_model  = {vec_starPos, model::POSITION | model::NORMAL};
+    planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
     
     // initializeGeometry(planet_model, planet_object);
     // initializeGeometry(star_model, star_object);
@@ -151,6 +151,10 @@ void ApplicationSolar::upload_planet_transforms(orb &p) const{
 
 void ApplicationSolar::render() const {
     
+    glUseProgram(m_shaders.at("star").handle);
+    glBindVertexArray(star_object.vertex_AO);
+    glDrawArrays(GL_POINTS, 0, 1000);
+    
     // bind shader to upload uniforms
     glUseProgram(m_shaders.at("planet").handle);
     
@@ -159,10 +163,6 @@ void ApplicationSolar::render() const {
     for(auto & orb : orbContainer){
         upload_planet_transforms(orb);
     }
-    
-    glUseProgram(m_shaders.at("star").handle);
-    glBindVertexArray(star_object.vertex_AO);
-    glDrawArrays(GL_POINTS, 0, 1000);
    // glDisableClientState(GL_VERTEX_ARRAY);
 }
 
