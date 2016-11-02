@@ -30,7 +30,6 @@ int highv_color = 1;
 #include <stdlib.h>                                         //To create random numbers
 #include <time.h>                                          //To use system clock as "seed" for random numbers
 
-
 #define PI 3.1415926535897932384626433832795028841971
 
 #include <iostream>
@@ -55,13 +54,10 @@ std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, 
 
 std::vector<float> vec_starPos;
 
-//std::random_device random;
-
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 :Application{resource_path}
 ,planet_object{}, star_object{}
 {
-    //std::random_device random;
     
     //Random function taken from: http://forums.codeguru.com/showthread.php?351834-how-do-i-generate-a-random-float-between-0-and-1
     
@@ -212,6 +208,30 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods) 
     }
     else if (key == GLFW_KEY_S && action == GLFW_PRESS) {
         m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, 0.1f});
+        updateView();
+    }
+    else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{1.0f, 0.0f, 0.0f});
+        updateView();
+    }
+    else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{-1.0f, 0.0f, 0.0f});
+        updateView();
+    }
+    else if (key == GLFW_KEY_UP && action == GLFW_PRESS){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, -1.0f, 0.0f});
+        updateView();
+    }
+    else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 1.0f, 0.0f});
+        updateView();
+    }
+    else if(key == GLFW_KEY_X && action == GLFW_PRESS){
+        m_view_transform = glm::rotate(m_view_transform, 0.05f, glm::fvec3{0.0f, -1.0f, 0.0f});
+        updateView();
+    }
+    else if(key == GLFW_KEY_V && action == GLFW_PRESS){
+        m_view_transform = glm::rotate(m_view_transform, 0.05f, glm::fvec3{0.0f, 1.0f, 0.0f});
         updateView();
     }
 }
