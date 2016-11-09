@@ -13,16 +13,25 @@ class ApplicationSolar : public Application {
     //Declaring the properties
       bool lunar;
       bool stars;
+      glm::vec3 color;
     float scaling;
     float rotation;
     float distance_to_origin;
 
-    //assigning nexessary value types
-    orb (float s, float r, float d, bool m = false, bool n = false):
+    //assigning necessary value types
+    /*orb (float s, float r, float d, bool m = false, bool n = false):
+      color{1.0f, 1.0f, 1.0f},
     scaling{s},
     rotation{r},
     distance_to_origin{d},
-    lunar{m} {};
+    lunar{m} {}; */
+      
+      orb(float s,  glm::vec3 c, float r, float d, bool m = false):
+      scaling{s},
+      color{c.x, c.y, c.z},
+      rotation{r},
+      distance_to_origin{d},
+      lunar{m} {};
       
   };
   // allocate and initialize objects

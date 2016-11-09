@@ -39,15 +39,15 @@ model planet_model{};
 model star_model{};
 
 //based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
-ApplicationSolar::orb sun {0.7f, 0.0f,    0.0f, };
-ApplicationSolar::orb mercury {0.05f, 365/88.0f, 15.0f, };
-ApplicationSolar::orb venus {0.2f, 365/225.0f, 18.0f, };
-ApplicationSolar::orb earth {0.15f, 1.0f, 21.0f, true};
-ApplicationSolar::orb mars {0.1f, 365/687.0f, 26.0f, };
-ApplicationSolar::orb jupiter {0.35f, 365/4332.0f, 31.0f, };
-ApplicationSolar::orb saturn {0.2f, 365/10759.0f, 36.0f, };
-ApplicationSolar::orb uranus {0.2f, 365/30688.0f, 40.0f, };
-ApplicationSolar::orb neptune {0.2f, 365/60182.0f, 45.0f, };
+ApplicationSolar::orb sun {0.7f, {0.99f, 0.95f, 0.43f},  0.0f,    0.0f, };
+ApplicationSolar::orb mercury {0.05f, {0.92f, 0.71f, 0.26f}, 365/88.0f, 15.0f, };
+ApplicationSolar::orb venus {0.2f, {1.00f, 0.94f, 0.75f}, 365/225.0f, 18.0f, };
+ApplicationSolar::orb earth {0.15f, {0.05f, 0.73f, 0.93f}, 1.0f, 21.0f, true};
+ApplicationSolar::orb mars {0.1f, {0.77f, 0.21f, 0.12f}, 365/687.0f, 26.0f, };
+ApplicationSolar::orb jupiter {0.35f, {0.85f, 0.43f, 0.20f}, 365/4332.0f, 31.0f, };
+ApplicationSolar::orb saturn {0.2f, {0.91f, 0.86f, 0.67f}, 365/10759.0f, 36.0f, };
+ApplicationSolar::orb uranus {0.2f, {0.63f, 0.85f, 0.77f}, 365/30688.0f, 40.0f, };
+ApplicationSolar::orb neptune {0.2f, {0.07f, 0.40f, 0.67f}, 365/60182.0f, 45.0f, };
 
 std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
 
@@ -114,7 +114,7 @@ void ApplicationSolar::upload_planet_transforms(orb &p) const{
                        1, GL_FALSE, glm::value_ptr(normal_matrix));
     
     //set planet colour
-    glUniform3f(m.shader.at("planet"). u_locs.at("colorVec"), p.color.x, p.color.y, p.color.z)
+    glUniform3f(m_shaders.at("planet"). u_locs.at("colorVec"), p.color.x, p.color.y, p.color.z);
     
     // bind the VAO to draw
     glBindVertexArray(planet_object.vertex_AO);
@@ -144,7 +144,7 @@ void ApplicationSolar::upload_planet_transforms(orb &p) const{
         glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
                            1, GL_FALSE, glm::value_ptr(normal_matrix));
         
-        glUniform3f(m.shaders.at("planet").u_locs.at("colorVec"), 1.0f, 1.0f, 0.0f);
+        glUniform3f(m_shaders.at("planet").u_locs.at("colorVec"), 1.0f, 1.0f, 0.0f);
         
         // bind the VAO to draw
         glBindVertexArray(planet_object.vertex_AO);
@@ -175,7 +175,12 @@ void ApplicationSolar::updateView() {
     // vertices are transformed in camera space, so camera transform must be inverted
     glm::fmat4 view_matrix = glm::inverse(m_view_transform);
     
-    
+    glUseProgram(m_shaders.at("planet").handle);
+    // add light vector to sun
+    glm::vec4 solar = {0.0f, 0.0f, 0.0f, 1.0f};
+    solar = view_matrix * solar;
+    glUniform3f(m_shaders.at("planet").u_locs.at("lightOrigin"), solar.x, solar.y, solar.z);
+
     
     glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ViewMatrix"),
                        1, GL_FALSE, glm::value_ptr(view_matrix));
@@ -183,7 +188,8 @@ void ApplicationSolar::updateView() {
     glUniformMatrix4fv(m_shaders.at("star").u_locs.at("ViewMatrix"),
                        1, GL_FALSE, glm::value_ptr(view_matrix));
     
-    glUseProgram(m_shaders.at("planet").handle);
+    //Temp comment
+    //glUseProgram(m_shaders.at("planet").handle);
 }
 
 void ApplicationSolar::updateProjection() {
@@ -260,11 +266,16 @@ void ApplicationSolar::initializeShaderPrograms() {
     m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
     m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
     
+    m_shaders.at("planet").u_locs["colorVec"] = -1;
+    m_shaders.at("planet").u_locs["lightOrigin"] = -1;
+    
     m_shaders.emplace("star", shader_program{m_resource_path + "shaders/stars.vert",
         m_resource_path + "shaders/stars.frag"});
     // request uniform locations for shader program
     m_shaders.at("star").u_locs["ViewMatrix"] = -1;
     m_shaders.at("star").u_locs["ProjectionMatrix"] = -1;
+    
+   
 }
 
 // load models
