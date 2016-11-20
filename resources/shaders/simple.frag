@@ -5,6 +5,17 @@ in vec3 pass_color;
 in vec3 pass_lightVec;
 in vec3 pass_viewVec;
 
+in vec2 pass_textureCoordinate;
+
+in  vec3 pass_Tangent;
+
+// Texture samplers
+uniform sampler2D colTex;
+uniform  sampler2D normTex;
+
+//Texture color for the planets.
+vec3 texture_color = vec3(texture(ColorTex, pass_textureCoordinate));
+
 out vec4 out_Color;
 
 //Values taken from: http://www.cs.toronto.edu/~jepson/csc2503/tutorials/phong.pdf
@@ -12,15 +23,28 @@ out vec4 out_Color;
 uniform vec3 planetColor;
 
 void main() {
+
+  // Get the color at the specific point
+    vec4 texture_col    = texture(colTex, pass_textureCoordinate);
+    vec3 norm_col = texture(normTex, pass_textureCoordinate).rgb;
+
+    // Bitangent calculation
+    vec3 bi_tangent = cross(pass_Normal, pass_Tangent);
+
+    // Show
+    mat3 m_tangent = mat3(pass_Tangent, bi_tangent, pass_Normal);
+
+    // Changing values for same range
+    norm_col.r = 2 * norm_col.r - 1.0f;
+    norm_col.g = 2 * norm_col.g - 1.0f;
+
+    vec3 normal = normalize(m_tangent * norm_col.rgb);
+
 	//Code taken from: http://learnopengl.com/#!Advanced-Lighting/Advanced-Lighting
   vec3 middleDirection = normalize(pass_lightVec.xyz + pass_viewVec);
 
   //Normalize 3 component vecs
   vec3 normal_comp = normalize(pass_Normal);
-
-  //Maybe
-  //vec3 light_comp = normalize(pass_lightVec.xyz - pass_viewVec.xyz);
-  //vec3 vec_comp = normalize(-pass_viewVec);
 
   float ka = 0.65; //0.7; 0.1;
   float kd = 0.6; //0.45; 0.6;
@@ -34,16 +58,10 @@ void main() {
   float refl_val = 0.5f;
 
   // The formula for the ambient light
-  vec3 ambient = ka * ia* pass_color;
-
-  //vec3 diffuse = kd * max(dot(normal_comp, light_comp), 0.0);
-  //diffuse = clamp(diffuse, 0.0, 1.0);
+  vec3 ambient = ka * ia* /*pass_color*/ texture_col.rgb;
 
   //Diffuse light: https://www.youtube.com/watch?v=K2lj2Rzs7hQ
-  vec3 diffuse = kd * id* pass_color;
-
-  //old
-  //float spec_light = ks * pow(max(dot(normal_comp, middleDirection), 0.0), 9.0);
+  vec3 diffuse = kd * id* /*pass_color*/ texture_col.rgb;
 
   vec3 spec_light = ks * is;
 
@@ -52,7 +70,4 @@ void main() {
     				spec_light* pow(dot(normal_comp,middleDirection),refl_val));
 
   out_Color = vec4(result,1.0f);
-
-  //old out - Do not change
-  //out_Color = vec4(abs(normalize(pass_Normal)), 1.0);
 }

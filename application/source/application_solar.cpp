@@ -4,6 +4,8 @@
 #include "utils.hpp"
 #include "shader_loader.hpp"
 #include "model_loader.hpp"
+#include "texture_loader.hpp"
+#include "utils.hpp"
 
 #include <glbinding/gl/gl.h>
 // use gl definitions from glbinding
@@ -20,6 +22,8 @@ int lowv_color = 0;
 int highv_color = 1;
 std::string shader = "planet";
 
+std::map<std::string, GLuint> textureMap;
+
 //dont load gl bindings from glfw
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -30,6 +34,7 @@ std::string shader = "planet";
 
 #include <stdlib.h>                                         //To create random numbers
 #include <time.h>                                          //To use system clock as "seed" for random numbers
+#include <stb_image.h>
 
 #define PI 3.1415926535897932384626433832795028841971
 
@@ -40,18 +45,18 @@ model planet_model{};
 model star_model{};
 
 //based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
-ApplicationSolar::orb sun {0.7f, {0.99f, 0.95f, 0.43f},  0.0f,    0.0f, };
-ApplicationSolar::orb mercury {0.05f, {0.92f, 0.71f, 0.26f}, 365/88.0f, 15.0f, };
-ApplicationSolar::orb venus {0.2f, {1.00f, 0.94f, 0.75f}, 365/225.0f, 18.0f, };
-ApplicationSolar::orb earth {0.15f, {0.05f, 0.73f, 0.93f}, 1.0f, 21.0f, true};
-ApplicationSolar::orb mars {0.1f, {0.77f, 0.21f, 0.12f}, 365/687.0f, 26.0f, };
-ApplicationSolar::orb jupiter {0.35f, {0.85f, 0.43f, 0.20f}, 365/4332.0f, 31.0f, };
-ApplicationSolar::orb saturn {0.2f, {0.91f, 0.86f, 0.67f}, 365/10759.0f, 36.0f, };
-ApplicationSolar::orb uranus {0.2f, {0.63f, 0.85f, 0.77f}, 365/30688.0f, 40.0f, };
-ApplicationSolar::orb neptune {0.2f, {0.07f, 0.40f, 0.67f}, 365/60182.0f, 45.0f, };
+ApplicationSolar::orb sun {"sun", 0.7f, {0.99f, 0.95f, 0.43f},  0.0f,    0.0f, };
+ApplicationSolar::orb mercury {"mercury", 0.05f, {0.92f, 0.71f, 0.26f}, 365/88.0f, 15.0f, };
+ApplicationSolar::orb venus {"venus", 0.2f, {1.00f, 0.94f, 0.75f}, 365/225.0f, 18.0f, };
+ApplicationSolar::orb earth {"earth", 0.15f, {0.05f, 0.73f, 0.93f}, 1.0f, 21.0f, true};
+ApplicationSolar::orb mars {"mars", 0.1f, {0.77f, 0.21f, 0.12f}, 365/687.0f, 26.0f, };
+ApplicationSolar::orb jupiter {"jupiter", 0.35f, {0.85f, 0.43f, 0.20f}, 365/4332.0f, 31.0f, };
+ApplicationSolar::orb saturn {"saturn", 0.2f, {0.91f, 0.86f, 0.67f}, 365/10759.0f, 36.0f, };
+ApplicationSolar::orb uranus {"uranus", 0.2f, {0.63f, 0.85f, 0.77f}, 365/30688.0f, 40.0f, };
+ApplicationSolar::orb neptune {"neptune", 0.2f, {0.07f, 0.40f, 0.67f}, 365/60182.0f, 45.0f, };
+ApplicationSolar::orb skysphere {"skysphere", 10.0f, {1.5f, 1.5f, 1.5f}, 0.0f, 0.0f,};
 
-std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
-
+std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune, skysphere};
 
 std::vector<float> vec_starPos;
 
@@ -90,6 +95,7 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
     // initializeGeometry(star_model, star_object);
     initializeGeometry();
     initializeShaderPrograms();
+    initializeTextures();
 }
 //glm::fmat4 modelTransformationStack; //For later
 
@@ -156,6 +162,9 @@ void ApplicationSolar::upload_planet_transforms(orb &p) const{
 }
 
 void ApplicationSolar::render() const {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureMap.at(p.name));
+    glUniform1i(m_shaders.at(shader).u_locs.at("colSamLoc"), 0);
     
     glUseProgram(m_shaders.at("star").handle);
     glBindVertexArray(star_object.vertex_AO);
@@ -207,6 +216,13 @@ void ApplicationSolar::updateProjection() {
     
     glUseProgram(m_shaders.at(shader).handle);
     
+}
+
+void ApplicationSolar::updateTextures(){
+    int color_sampler_location =
+    glGetUniformLocation(m_shaders.at(shader).handle, "ColTex");
+    glUseProgram(m_shaders.at(shader).handle);
+    glUniform1i(color_sampler_location, 0);
 }
 
 void ApplicationSolar::uploadUniforms() {
@@ -272,6 +288,8 @@ void ApplicationSolar::initializeShaderPrograms() {
     
     m_shaders.at("planet").u_locs["colorVec"] = -1;
     m_shaders.at("planet").u_locs["lightOrigin"] = -1;
+    m_shaders.at("planet").u_locs["colSampLoc"] = -1;
+    m_shaders.at("planet").u_locs["colTex"] = -1;
     
     m_shaders.emplace("star", shader_program{m_resource_path + "shaders/stars.vert",
         m_resource_path + "shaders/stars.frag"});
@@ -353,6 +371,38 @@ void ApplicationSolar::initializeGeometry() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * star_model.indices.size(), star_model.indices.data(), GL_STATIC_DRAW);
     
     
+}
+
+void ApplicationSolar::initializeTextures()
+{    
+    std::string textureDir = m_resource_path + "textures/";
+    // Load all texture maps for each planet
+    auto sunTexture      = texture_loader::file(textureDir + "sun.jpg");
+    auto mercuryTexture  = texture_loader::file(textureDir + "mercury.jpg");
+    auto venusTexture    = texture_loader::file(textureDir + "venus.jpg");
+    auto earthTexture    = texture_loader::file(textureDir + "earth.jpg");
+    auto marsTexture     = texture_loader::file(textureDir + "mars.jpg");
+    auto jupiterTexture  = texture_loader::file(textureDir + "jupiter.jpg");
+    auto saturnTexture   = texture_loader::file(textureDir + "saturn.jpg");
+    auto uranusTexture   = texture_loader::file(textureDir + "uranus.jpg");
+    auto neptuneTexture  = texture_loader::file(textureDir + "neptune.jpg");
+    auto moonTexture     = texture_loader::file(textureDir + "moon.jpg");
+    auto skyTexture      = texture_loader::file(textureDir + "skybox.jpg");
+    
+    //
+    textureMap = {
+        {"sun"      , utils::create_texture_object(sunTexture)},
+        {"mercury"  , utils::create_texture_object(mercuryTexture)},
+        {"venus"    , utils::create_texture_object(venusTexture)},
+        {"earth"    , utils::create_texture_object(earthTexture)},
+        {"mars"     , utils::create_texture_object(marsTexture)},
+        {"jupiter"  , utils::create_texture_object(jupiterTexture)},
+        {"saturn"   , utils::create_texture_object(saturnTexture)},
+        {"uranus"   , utils::create_texture_object(uranusTexture)},
+        {"neptune"  , utils::create_texture_object(neptuneTexture)},
+        {"moon"     , utils::create_texture_object(moonTexture)},
+        {"skysphere", utils::create_texture_object(skyTexture)},
+    };
 }
 
 ApplicationSolar::~ApplicationSolar() {
