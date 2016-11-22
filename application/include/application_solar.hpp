@@ -11,7 +11,6 @@ class ApplicationSolar : public Application {
   struct orb{
     
     //Declaring the properties
-      std::string name;
       bool lunar;
       bool stars;
       glm::vec3 color;
@@ -27,8 +26,7 @@ class ApplicationSolar : public Application {
     distance_to_origin{d},
     lunar{m} {}; */
       
-      orb(std::string n, float s,  glm::vec3 c, float r, float d, bool m = false):
-      name{n},
+      orb(float s,  glm::vec3 c, float r, float d, bool m = false):
       scaling{s},
       color{c.x, c.y, c.z},
       rotation{r},
@@ -58,10 +56,11 @@ class ApplicationSolar : public Application {
  protected:
   void initializeShaderPrograms();
   void initializeGeometry();
-    void initializeTextures();
   void updateView();
     void starUpdateView();
-    void updateTextures();
+    
+   void loadTextures();
+   void initializeTextures();
 
   void upload_planet_transforms(orb  &p) const;
 
