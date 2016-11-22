@@ -15,7 +15,54 @@ namespace utils {
 texture_object create_texture_object(pixel_data const& tex) {
   texture_object t_obj{};
 
-  throw std::logic_error("Texture Object creation not implemented yet");
+    GLuint texture_object = 0;
+    glGenTextures(1, &texture_object);
+    
+    // bind new texture handle to current unit for configuration
+    glBindTexture(GL_TEXTURE_2D, texture_object);
+    // if coordinate is outside texture, use border color
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_EDGE));
+    //linear interpolation if texel is smaller/bigger than fragment pixel
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
+    
+    // determine format of image data, internal format should be sized
+    GLenum internal_format = GL_NONE;
+    if (tex.channels == GL_RED) {
+        internal_format = GL_R8;
+    }
+    else if (tex.channels == GL_RG) {
+        internal_format = GL_RG8;
+    }
+    else if (tex.channels == GL_RGB) {
+        internal_format = GL_RGB8;
+    }
+    else if (tex.channels == GL_RGBA) {
+        internal_format = GL_RGBA8;
+    }
+    
+    // create blank texture if struct contains no pixel data
+    GLvoid const* data_ptr = nullptr;
+    //if (!pixels.data.empty()) {
+       // data_ptr = &pixel_data.data[0];
+    //}
+    
+    // define & upload texture data
+    if (GL_TEXTURE_2D == GL_TEXTURE_1D){
+        glTexImage1D(GL_TEXTURE_2D, 0, GLint(internal_format), tex.width, 0, tex.channels, tex.channel_type, data_ptr);
+    }
+    else if (GL_TEXTURE_2D == GL_TEXTURE_2D) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE));
+        glTexImage2D(GL_TEXTURE_2D, 0, GLint(internal_format), tex.width, tex.height, 0, tex.channels, tex.channel_type, data_ptr);
+    }
+    else if (GL_TEXTURE_2D == GL_TEXTURE_3D){
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GLint(GL_CLAMP_TO_EDGE));
+        glTexImage3D(GL_TEXTURE_2D, 0, GLint(internal_format), tex.width, tex.height, tex.depth, 0, tex.channels, tex.channel_type, data_ptr);
+    }
+    else {
+        throw std::logic_error("Unsupported Format ");
+    }
 
   return t_obj;
 }

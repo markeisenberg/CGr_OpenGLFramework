@@ -4,12 +4,10 @@
 #include "utils.hpp"
 #include "shader_loader.hpp"
 #include "model_loader.hpp"
+#include "texture_loader.hpp"
+#include "structs.hpp"
 
 #include <glbinding/gl/gl.h>
-
-#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
-
-#include <array>
 // use gl definitions from glbinding
 using namespace gl;
 
@@ -23,6 +21,8 @@ int highv = 70;
 int lowv_color = 0;
 int highv_color = 1;
 std::string shader = "planet";
+
+std::map<std::string, texture_object> textureMap;
 
 //dont load gl bindings from glfw
 #define GLFW_INCLUDE_NONE
@@ -43,43 +43,19 @@ std::string shader = "planet";
 model planet_model{};
 model star_model{};
 
-GLuint texture_object0;
-GLuint texture_object1;
-GLuint texture_object2;
-GLuint texture_object3;
-GLuint texture_object3_1;
-GLuint texture_object4;
-GLuint texture_object5;
-GLuint texture_object6;
-GLuint texture_object7;
-GLuint texture_object8;
-GLuint texture_objectU;
-
-::pixel_data texture0;
-pixel_data texture1;
-pixel_data texture2;
-pixel_data texture3;
-pixel_data texture3_1;
-pixel_data texture4;
-pixel_data texture5;
-pixel_data texture6;
-pixel_data texture7;
-pixel_data texture8;
-pixel_data textureU;
-
 //based on values from http://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_ratio.html
-ApplicationSolar::orb sun {0.7f, {0.99f, 0.95f, 0.43f},  0.0f,    0.0f, };
-ApplicationSolar::orb mercury {0.05f, {0.92f, 0.71f, 0.26f}, 365/88.0f, 15.0f, };
-ApplicationSolar::orb venus {0.2f, {1.00f, 0.94f, 0.75f}, 365/225.0f, 18.0f, };
-ApplicationSolar::orb earth {0.15f, {0.05f, 0.73f, 0.93f}, 1.0f, 21.0f, true};
-ApplicationSolar::orb mars {0.1f, {0.77f, 0.21f, 0.12f}, 365/687.0f, 26.0f, };
-ApplicationSolar::orb jupiter {0.35f, {0.85f, 0.43f, 0.20f}, 365/4332.0f, 31.0f, };
-ApplicationSolar::orb saturn {0.2f, {0.91f, 0.86f, 0.67f}, 365/10759.0f, 36.0f, };
-ApplicationSolar::orb uranus {0.2f, {0.63f, 0.85f, 0.77f}, 365/30688.0f, 40.0f, };
-ApplicationSolar::orb neptune {0.2f, {0.07f, 0.40f, 0.67f}, 365/60182.0f, 45.0f, };
-ApplicationSolar::orb skysphere {10.0f, {1.5f, 1.5f, 1.5f}, 0.0f, 0.0f,};
+ApplicationSolar::orb sun {"sun", 0.7f, {0.99f, 0.95f, 0.43f},  0.0f,    0.0f, };
+ApplicationSolar::orb mercury {"mercury", 0.05f, {0.92f, 0.71f, 0.26f}, 365/88.0f, 15.0f, };
+ApplicationSolar::orb venus {"venus", 0.2f, {1.00f, 0.94f, 0.75f}, 365/225.0f, 18.0f, };
+ApplicationSolar::orb earth {"earth", 0.15f, {0.05f, 0.73f, 0.93f}, 1.0f, 21.0f, true};
+ApplicationSolar::orb mars {"mars", 0.1f, {0.77f, 0.21f, 0.12f}, 365/687.0f, 26.0f, };
+ApplicationSolar::orb jupiter {"jupiter", 0.35f, {0.85f, 0.43f, 0.20f}, 365/4332.0f, 31.0f, };
+ApplicationSolar::orb saturn {"saturn", 0.2f, {0.91f, 0.86f, 0.67f}, 365/10759.0f, 36.0f, };
+ApplicationSolar::orb uranus {"uranus", 0.2f, {0.63f, 0.85f, 0.77f}, 365/30688.0f, 40.0f, };
+ApplicationSolar::orb neptune {"neptune", 0.2f, {0.07f, 0.40f, 0.67f}, 365/60182.0f, 45.0f, };
 
-std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune, skysphere};
+std::vector<ApplicationSolar::orb> orbContainer = {sun, mercury, earth , venus, mars, jupiter, saturn, uranus, neptune};
+
 
 std::vector<float> vec_starPos;
 
@@ -87,6 +63,43 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 :Application{resource_path}
 ,planet_object{}, star_object{}
 {
+    
+    std::string textureDir = resource_path + "textures/";
+    // Load texture maps
+    auto sunTexture      = utils::create_texture_object(texture_loader::file(textureDir + "sun.png"));
+    auto mercuryTexture  = utils::create_texture_object(texture_loader::file(textureDir + "mercury.png"));
+    auto venusTexture    = utils::create_texture_object(texture_loader::file(textureDir + "venus.png"));
+    auto earthTexture    = utils::create_texture_object(texture_loader::file(textureDir + "earth.png"));
+    auto marsTexture     = utils::create_texture_object(texture_loader::file(textureDir + "mars.png"));
+    auto jupiterTexture  = utils::create_texture_object(texture_loader::file(textureDir + "jupiter.png"));
+    auto saturnTexture   = utils::create_texture_object(texture_loader::file(textureDir + "saturn.png"));
+    auto uranusTexture   = utils::create_texture_object(texture_loader::file(textureDir + "uranus.png"));
+    auto neptuneTexture   = utils::create_texture_object(texture_loader::file(textureDir + "neptune.png"));
+    //auto moonTexture     = utils::create_texture_object(texture_loader::file(textureDir + "moonmap.png"));
+    
+    /*textureVector = {
+     
+     sunTexture,
+     mercuryTexture,
+     venusTexture,
+     earthTexture,
+     marsTexture,
+     jupiterTexture,
+     saturnTexture,
+     uranusTexture
+     };*/
+    
+    textureMap = {
+        {"sun"      , sunTexture},
+        {"mercury"  , mercuryTexture},
+        {"venus"    , venusTexture},
+        {"earth"    , earthTexture},
+        {"mars"     , marsTexture},
+        {"jupiter"  , jupiterTexture},
+        {"saturn"   , saturnTexture},
+        {"uranus"   , uranusTexture},
+        {"neptune"   , neptuneTexture},
+    };
     
     //Random function taken from: http://forums.codeguru.com/showthread.php?351834-how-do-i-generate-a-random-float-between-0-and-1
     
@@ -118,14 +131,18 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
     // initializeGeometry(star_model, star_object);
     initializeGeometry();
     initializeShaderPrograms();
-    loadTextures();
-    initializeTextures();
 }
 //glm::fmat4 modelTransformationStack; //For later
 
 void ApplicationSolar::upload_planet_transforms(orb &p) const{
+    //glUseProgram(m_shaders.at(shader).handle);
     
+    auto tex_obj = textureMap.at(p.name);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex_obj.handle);
     glUseProgram(m_shaders.at(shader).handle);
+    glUniform1i(m_shaders.at(shader).u_locs.at("colTex"), 0);
     
     //rotation period based on time set below
     glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime() * p.rotation), glm::fvec3{0.0f, 1.0f, 0.0f});
@@ -201,68 +218,6 @@ void ApplicationSolar::render() const {
         upload_planet_transforms(orb);
     }
     // glDisableClientState(GL_VERTEX_ARRAY);
-    
-    //skybox is rendered
-    glm::mat4 sky_matrix = glm::translate(glm::mat4{}, glm::vec3{0.0f, 0.0f, 0.0f});
-    sky_matrix = glm::scale(sky_matrix, glm::vec3{150.0f, 150.0f, 150.0f});
-    glUniformMatrix4fv(location_model_matrix, 1, GL_FALSE, glm::value_ptr(sky_matrix));
-    
-    // extra matrix for normal transformation to keep them orthogonal to surface
-    glm::mat4 normal_sky_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * sky_matrix);
-    glUniformMatrix4fv(location_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_sky_matrix));
-    
-    
-    //    //send position Information of Sun to Shader
-    //    glm::vec4 sun_position = ( glm::inverse(camera_transform) * model_matrix) * glm::vec4{0.0f, 0.0f, 0.0f, 1.0f};
-    //    glUniform3fv(location_light, 1, glm::value_ptr(sun_position));
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(textureU.target, texture_objectU);
-    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-    
-    glDrawElements(GL_TRIANGLES, GLsizei(planet_model.indices.size()), model::INDEX.type, NULL);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture0.target, texture_object0);
-    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-    
-    //textures
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture3.target, texture_object3);
-    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture3_1.target, texture_object3_1);
-    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture1.target, texture_object1);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture2.target, texture_object2);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture3.target, texture_object3);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture4.target, texture_object4);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture4.target, texture_object5);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture6.target, texture_object6);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture7.target, texture_object7);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(texture8.target, texture_object8);
-    
-    glUseProgram(simple_program);
-    
-    //render texture
-    glUniform1i(glGetUniformLocation(simple_program, "texSampler"), 0);
 }
 
 void ApplicationSolar::updateView() {
@@ -365,6 +320,7 @@ void ApplicationSolar::initializeShaderPrograms() {
     
     m_shaders.at("planet").u_locs["colorVec"] = -1;
     m_shaders.at("planet").u_locs["lightOrigin"] = -1;
+    m_shaders.at("planet").u_locs["colTex"] = -1;
     
     m_shaders.emplace("star", shader_program{m_resource_path + "shaders/stars.vert",
         m_resource_path + "shaders/stars.frag"});
@@ -399,8 +355,9 @@ void ApplicationSolar::initializeGeometry() {
     glEnableVertexAttribArray(1);
     // second attribute is 3 floats with no offset & stride
     glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
-    
+    // activate third attribute on gpu
     glEnableVertexAttribArray(2);
+    // first attribute is 3 floats with no offset & stride
     glVertexAttribPointer(2, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::TEXCOORD]);
     
     // generate generic buffer
@@ -447,110 +404,6 @@ void ApplicationSolar::initializeGeometry() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, star_object.element_BO);
     // configure currently bound array buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * star_model.indices.size(), star_model.indices.data(), GL_STATIC_DRAW);
-    
-    initializeTextures();
-}
-
-void ApplicationSolar::loadTextures() {
-    
-    texture1 = texture_loader::file(resource_path + "textures/1.png");
-    texture2 = texture_loader::file(resource_path + "textures/2.png");
-    texture3 = texture_loader::file(resource_path + "textures/3.png");
-    texture4 = texture_loader::file(resource_path + "textures/4.png");
-    texture5 = texture_loader::file(resource_path + "textures/5.png");
-    texture6 = texture_loader::file(resource_path + "textures/6.png");
-    texture7 = texture_loader::file(resource_path + "textures/7.png");
-    texture8 = texture_loader::file(resource_path + "textures/8.png");
-    texture0 = texture_loader::file(resource_path + "textures/0.png");
-    texture3_1 = texture_loader::file(resource_path + "textures/3-1.png");
-    textureU = texture_loader::file(resource_path + "textures/9.png");
-    
-    
-}
-
-void ApplicationSolar::initializeTextures(){
-    //USE GL_RGBA if the textures provide an alpha channel
-    //somehow not needed yet:    //
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object0);
-    glBindTexture(texture0.target, texture_object0);
-    glTexParameteri(texture0.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture0.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture0.target , 0 , GLint(GL_RGBA) , texture0.width , texture0.height , 0 , GL_RGBA , texture0.channel_type , texture0.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object1);
-    glBindTexture(texture1.target, texture_object1);
-    glTexParameteri(texture1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture1.target , 0 , GLint(GL_RGBA) , texture1.width , texture1.height , 0 , GL_RGBA , texture1.channel_type , texture1.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object2);
-    glBindTexture(texture2.target, texture_object2);
-    glTexParameteri(texture2.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture2.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture2.target , 0 , GLint(GL_RGBA) , texture2.width , texture2.height , 0 , GL_RGBA , texture2.channel_type , texture2.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object3);
-    glBindTexture(texture3.target, texture_object3);
-    glTexParameteri(texture3.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture3.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture3.target , 0 , GLint(GL_RGBA) , texture3.width , texture3.height , 0 , GL_RGBA , texture3.channel_type , texture3.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object4);
-    glBindTexture(texture4.target, texture_object4);
-    glTexParameteri(texture4.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture4.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture4.target , 0 , GLint(GL_RGBA) , texture4.width , texture4.height , 0 , GL_RGBA , texture4.channel_type , texture4.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object5);
-    glBindTexture(texture5.target, texture_object5);
-    glTexParameteri(texture5.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture5.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture5.target , 0 , GLint(GL_RGBA) , texture5.width , texture5.height , 0 , GL_RGBA , texture5.channel_type , texture5.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object6);
-    glBindTexture(texture6.target, texture_object6);
-    glTexParameteri(texture6.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture6.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture6.target , 0 , GLint(GL_RGBA) , texture6.width , texture6.height , 0 , GL_RGBA , texture6.channel_type , texture6.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object7);
-    glBindTexture(texture7.target, texture_object7);
-    glTexParameteri(texture7.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture7.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture7.target , 0 , GLint(GL_RGBA) , texture7.width , texture7.height , 0 , GL_RGBA , texture7.channel_type , texture7.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object8);
-    glBindTexture(texture8.target, texture_object8);
-    glTexParameteri(texture8.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture8.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture8.target , 0 , GLint(GL_RGBA) , texture8.width , texture8.height , 0 , GL_RGBA , texture8.channel_type , texture8.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_objectU);
-    glBindTexture(textureU.target, texture_objectU);
-    glTexParameteri(textureU.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(textureU.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(textureU.target , 0 , GLint(GL_RGBA) , textureU.width , textureU.height , 0 , GL_RGBA , textureU.channel_type , textureU.data.data());
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &texture_object3_1);
-    glBindTexture(texture3_1.target, texture_object3_1);
-    glTexParameteri(texture3_1.target, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR));
-    glTexParameteri(texture3_1.target, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR));
-    glTexImage2D(texture3_1.target , 0 , GLint(GL_RGBA) , texture3_1.width , texture3_1.height , 0 , GL_RGBA , texture3_1.channel_type , texture3_1.data.data());
-    
-    
-    
     
     
 }

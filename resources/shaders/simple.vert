@@ -3,7 +3,7 @@
 // vertex attributes of VAO
 layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec3 in_Normal;
-layout(location = 2) in vec2 in_textureCoord;
+layout(location = 2) in vec2 in_textureCoordinate;
 
 //Matrix Uniforms as specified with glUniformMatrix4fv
 uniform mat4 ModelMatrix;
@@ -19,7 +19,7 @@ out vec3 pass_color;
 out vec3 pass_lightVec;
 out vec3 pass_viewVec;
 
-out vec2 pass_textureCoord;
+out vec2 pass_textureCoordinate;
 
 void main(void)
 {
@@ -31,6 +31,5 @@ void main(void)
 	pass_viewVec = normalize(- planet_Loc.xyz);
 
 	pass_color = colorVec;
-    
-    pass_textureCoord = in_textureCoord;
+    pass_textureCoordinate = in_textureCoordinate;
 }
