@@ -27,8 +27,8 @@ class ApplicationSolar : public Application {
     distance_to_origin{d},
     lunar{m} {}; */
       
-      orb(std::string n, float s,  glm::vec3 c, float r, float d, bool m = false):
-      name{n},
+      orb(std::string title, float s,  glm::vec3 c, float r, float d, bool m = false):
+      name{title},
       scaling{s},
       color{c.x, c.y, c.z},
       rotation{r},
@@ -54,15 +54,14 @@ class ApplicationSolar : public Application {
 
   // draw all objects
   void render() const;
+    
+    void upload_planet_transforms(orb  &p,  texture_object const& tex_obj) const;
 
  protected:
   void initializeShaderPrograms();
-  void initializeGeometry();
+  void initializeGeometry(model& mdl, model_object& object);
   void updateView();
     void starUpdateView();
-    //GLuint loadTexture(pixel_data const& tex) const;
-
-  void upload_planet_transforms(orb  &p) const;
 
   // cpu representation of model
   model_object planet_object, star_object;
