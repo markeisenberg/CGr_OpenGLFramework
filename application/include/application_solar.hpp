@@ -60,11 +60,20 @@ class ApplicationSolar : public Application {
  protected:
   void initializeShaderPrograms();
   void initializeGeometry(model& mdl, model_object& object);
+    
+  void initialize_framebuffer(int width, int height);
+  void initialize_screenquad(model& mdl, model_object& object);
+    
   void updateView();
     void starUpdateView();
+    
+    void renderBuffer() const;
+    
+    void createBuffer();
+    void initializeTextureQuad();
 
   // cpu representation of model
-  model_object planet_object, star_object;
+  model_object planet_object, star_object, quad_object;
 };
 
 #endif
