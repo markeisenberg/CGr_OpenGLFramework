@@ -1,74 +1,63 @@
 #version 150
 
-uniform sampler2D texSampler;
-in vec2 pass_textureCoord;
-out vec4 FragColor;
-uniform vec2 size;
+in  vec3 pass_Normal;
+in vec3 pass_color;
+in vec3 pass_lightVec;
+in vec3 pass_viewVec;
 
-uniform int greyscale = 0;
-uniform int horizMirror = 0;
-uniform int verticMirror = 0;
-uniform int gausBlur = 0;
+uniform  sampler2D colTex;
 
-uniform float offset[5] = float[]( 0.0, 1.0, 2.0, 3.0, 4.0 );
-uniform float weight[5] = float[]( 0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162 );
+in vec2 pass_textureCoordinate;
 
-vec4 greyscaleMultiply (vec4 inColor)
-{
-    return vec4(vec3(dot(vec3(0.2126f, 0.7152f, 0.0722f), inColor.rgb)), inColor.a);
-}
+out vec4 out_Color;
 
-vec2 horizontal_mirror (vec2 coordinates)
-{
-    return vec2(1.0f-coordinates.x, coordinates.y);
-}
+//Values taken from: http://www.cs.toronto.edu/~jepson/csc2503/tutorials/phong.pdf
 
-vec2 vertical_mirror (vec2 coordinates)
-{
-    return vec2(coordinates.x, 1.0f-coordinates.y);
-}
-
-void gaussian_blur ()
-{
-    FragColor = texture( texSampler, vec2(gl_FragCoord)/600.0 ) * weight[0];
-    for (int i=1; i<5; i++) {
-        FragColor += texture(texSampler, (vec2(gl_FragCoord)+vec2(0.0, offset[i]) )/600.0 )* weight[i];
-        FragColor += texture(texSampler, (vec2(gl_FragCoord)-vec2(0.0, offset[i]) )/600.0 )* weight[i];
-    }
-    //return inColor;
-}
+//uniform vec3 planetColor;
 
 void main() {
-    
-    vec2 textureCoord = pass_textureCoord;
-    
-    if (horizMirror == 1)
-    {
-        textureCoord = horizontal_mirror(textureCoord);
-    }
-    
-    if (verticMirror == 1)
-    {
-        textureCoord = vertical_mirror(textureCoord);
-    }
-    
-    vec4 inColor = texture(texSampler, textureCoord);
-    
-    if (greyscale == 1)
-    {
-        inColor = greyscaleMultiply(inColor);
-    }
-    
-    FragColor = inColor;
-    
-    if(gausBlur == 1)
-    {
-        gaussian_blur();
-    }
-    
-    
+  vec4 surfaceCol = texture(colTex, pass_textureCoordinate);
+	//Code taken from: http://learnopengl.com/#!Advanced-Lighting/Advanced-Lighting
+  vec3 middleDirection = normalize(pass_lightVec.xyz + pass_viewVec);
+
+  //Normalize 3 component vecs
+  vec3 normal_comp = normalize(pass_Normal);
+
+  //Maybe
+  //vec3 light_comp = normalize(pass_lightVec.xyz - pass_viewVec.xyz);
+  //vec3 vec_comp = normalize(-pass_viewVec);
+
+  float ka = 0.3; //0.65; //0.7; 0.1;
+  float kd = 0.3; //0.6; //0.45; 0.6;
+  float ks = 0.7; //0.9; //1.0; 0.7;
+
+  vec3 ia = vec3(0.3f, 0.3f, 0.3f);
+  vec3 id = vec3(0.3f, 0.3f, 0.3f);
+  vec3 is = vec3(0.7f, 0.7f, 0.7f);
+
+  //How reflective the planets become
+  float refl_val = 2.0f; //0.5f;
+
+  // The formula for the ambient light
+  vec3 ambient = ka * ia + surfaceCol.rgb;
+
+  //vec3 diffuse = kd * max(dot(normal_comp, light_comp), 0.0);
+  //diffuse = clamp(diffuse, 0.0, 1.0);
+
+  //Diffuse light: https://www.youtube.com/watch?v=K2lj2Rzs7hQ
+  vec3 diffuse = kd * id + surfaceCol.rgb;
+
+  //old
+  //float spec_light = ks * pow(max(dot(normal_comp, middleDirection), 0.0), 9.0);
+
+  vec3 spec_light = ks * is;
+
+ //Equation taken for Phong from: http://web.cse.ohio-state.edu/~whmin/courses/cse5542-2013-spring/11-illumination.pdf
+ vec3 result = vec3(ambient+ diffuse * dot(pass_lightVec.rgb, normal_comp)+ 
+    				spec_light* pow(dot(normal_comp,middleDirection),refl_val));
+
+  out_Color = vec4(result,1.0f);
+
+  //old out - Do not change
+  //out_Color = vec4(abs(normalize(pass_Normal)), 1.0);
 }
-
-
-
-
